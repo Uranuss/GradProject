@@ -19,6 +19,51 @@ public class GameController : MonoBehaviour {
 			return _instance;
 		}
 	}
+	[SerializeField]
+	PlayerSkinnedObject player = null;
+
+	private bool _boss = false;
+	private Transform _bossPosition = null;
+
+	public bool bossState {
+		get {
+			return _boss;
+		}
+	}
+	public Vector3 bossPosition {
+		get {
+			if(_boss) return _bossPosition.position;
+			else return Vector3.zero;
+		}
+	}
+	public void BossStart(GameObject boss)
+	{
+		if(boss) {
+			_boss = true;
+			_bossPosition = boss.transform;
+		}
+	}
+	public void BossEnded()
+	{
+		if(_boss)
+		{
+			_boss = false;
+			_bossPosition = null;
+		}
+	}
+
+	public void Awake()
+	{
+		if(player == null)
+		{
+			player = FindObjectOfType<PlayerSkinnedObject>();
+		}
+	}
+	private bool _freezed = false;
+	public void freeze(bool f)
+	{
+		_freezed = f;
+	}
 
 	public void SpeedControll(float fv)
 	{
@@ -26,7 +71,7 @@ public class GameController : MonoBehaviour {
 		this._speedScale = fv;
 	}
 
-	public void puase()
+	public void pause()
 	{
 		if(_state != GAMESTATE.PAUSE) state = GAMESTATE.PAUSE;
 		else stateReverse();
@@ -34,14 +79,40 @@ public class GameController : MonoBehaviour {
 	public bool onRun = false;
 	// Use this for initialization
 	void Start () {
-		if(onRun) state = GAMESTATE.RUN;
+		state = GAMESTATE.INTRO;
+		if(onRun) {
+			state = GAMESTATE.RUN;
+		}
 	}
+
+	float INTROTIME = 3.0f;
+	float IntroTimer = 3.0f;
 	// Update is called once per frame
 	void Update () {
+		switch(_state)
+		{
+			case GAMESTATE.INTRO:
+				IntroTimer -= Time.deltaTime;
+				if(IntroTimer <= 0)
+				{
+					state = GAMESTATE.RUN;
+				} else IntroTimer -= Time.deltaTime;
+				break;
+			default:
+				break;
+		}
 	}
 
 	void exitState(GAMESTATE state)
 	{
+		switch(state)
+		{
+			case GAMESTATE.INTRO:
+				if(player) player.startRun();
+				break;
+			default:
+				break;
+		}
 	}
 	
 	void enterState(GAMESTATE state)
@@ -56,11 +127,12 @@ public class GameController : MonoBehaviour {
 			case GAMESTATE.INTRO:
 				_speedScale = 0;
 				_animScale = 1;
+				IntroTimer = INTROTIME;
 				_controllable = false;
 				break;
 			case GAMESTATE.GAMEOVER:
 				_speedScale = 0;
-				_animScale = 0;
+				_animScale = 1;
 				_controllable = false;
 				break;
 			case GAMESTATE.BOSS:
@@ -127,12 +199,12 @@ public class GameController : MonoBehaviour {
 	public float MoveSpeed { get { return _MoveSpeed; } }
 
 	private float _speedScale = 1.0f;
-	public float SpeedScale{ get { return _speedScale; } }
+	public float SpeedScale{ get { if(_freezed) return 0; else return _speedScale; } }
 	private float _animScale = 1.0f;
-	public float AniScale{ get { return _animScale; } }
+	public float AniScale{ get { if(_freezed) return 0; else return _animScale; } }
 
-	private GAMESTATE _state = GAMESTATE.INTRO;
-	private GAMESTATE _prvstate = GAMESTATE.INTRO;
+	private GAMESTATE _state = GAMESTATE.INIT;
+	private GAMESTATE _prvstate = GAMESTATE.INIT;
 	public void stateReverse()
 	{
 		state = _prvstate;
@@ -151,6 +223,7 @@ public class GameController : MonoBehaviour {
 
 	public enum GAMESTATE
 	{
+		INIT,
 		INTRO,
 		RUN,
 		STORE,
