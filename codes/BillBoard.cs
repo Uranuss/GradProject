@@ -6,7 +6,7 @@ public class BillBoard : MonoBehaviour {
 	public Camera cam;
 	// Use this for initialization
 	void Start () {
-		cam = Camera.main;
+        if(cam == null) cam = Camera.main;
 	}
 	
 	// Update is called once per frame
